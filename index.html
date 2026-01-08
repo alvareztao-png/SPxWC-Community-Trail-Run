@@ -56,27 +56,27 @@ a.download:hover {
 <p>Enter your full name</p>
 
 <input id="nameInput" placeholder="Full Name">
-<button onclick="generate()">Generate</button>
+<button id="generateBtn">Generate</button>
 
 <canvas id="canvas" width="1080" height="1350"></canvas>
 <br>
 <a id="downloadLink" class="download" style="display:none">Download e-BIB</a>
 
 <script>
-// GLOBAL VARIABLES
+// --- VARIABLES ---
 let participants = [];
 let template = new Image();
 
-// Load masterlist
+// Load participants.json
 fetch("data/participants.json")
   .then(res => res.json())
   .then(data => participants = data)
-  .catch(err => alert("Error loading participant list"));
+  .catch(err => alert("Error loading participant list: " + err));
 
-// Load template
+// Load template image
 template.src = "assets/template.png";
 
-// FUZZY MATCH FUNCTION (partial name matching)
+// --- FUZZY MATCH FUNCTION ---
 function fuzzyMatch(input, list){
   input = input.toLowerCase();
   let best = null;
@@ -92,7 +92,7 @@ function fuzzyMatch(input, list){
   return best;
 }
 
-// GENERATE e-BIB
+// --- GENERATE FUNCTION ---
 function generate(){
   const inputName = document.getElementById("nameInput").value.trim();
   if(!inputName){ alert("Please enter your name"); return; }
@@ -104,42 +104,46 @@ function generate(){
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
+  // Ensure template is loaded before drawing
   if (!template.complete) {
-      template.onload = render;
+      template.onload = () => drawCanvas();
   } else {
-      render();
+      drawCanvas();
   }
 
-  function render(){
+  function drawCanvas(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(template,0,0);
+    ctx.drawImage(template,0,0,canvas.width,canvas.height);
 
     ctx.textAlign = "center";
     ctx.fillStyle = "#fff";
-
-    // BIB NUMBER
-    ctx.font = "bold 140px 'Anton', sans-serif";
-    ctx.fillText(bibNumber, canvas.width/2, canvas.height/2);
-
-    // NAME
-    ctx.font = "bold 60px 'Anton', sans-serif";
-    if(displayName) ctx.fillText(displayName, canvas.width/2, canvas.height/2 + 120);
 
     // EVENT NAME
     ctx.font = "bold 60px 'Anton', sans-serif";
     ctx.fillText("MY VIRTUAL RUN 2026", canvas.width/2, 80);
 
+    // BIB NUMBER
+    ctx.font = "bold 140px 'Anton', sans-serif";
+    ctx.fillText(bibNumber, canvas.width/2, canvas.height/2);
+
+    // PARTICIPANT NAME
+    ctx.font = "bold 60px 'Anton', sans-serif";
+    if(displayName) ctx.fillText(displayName, canvas.width/2, canvas.height/2 + 120);
+
     // DATE
     ctx.font = "40px 'Anton', sans-serif";
     ctx.fillText("March 2026", canvas.width/2, canvas.height - 50);
 
-    // DOWNLOAD LINK
+    // Setup download
     const downloadLink = document.getElementById("downloadLink");
     downloadLink.href = canvas.toDataURL("image/png");
     downloadLink.download = `eBIB_${bibNumber}_${displayName.replace(/\s+/g,"_") || "guest"}.png`;
     downloadLink.style.display = "inline-block";
   }
 }
+
+// Attach generate function to button
+document.getElementById("generateBtn").addEventListener("click", generate);
 </script>
 
 </body>
